@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Invoice {{ InvoiceId or '' }}</title>
+    <style>
+        /* ===== RESET & PAGE SETUP ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        @page {
+            size: A4;
+            margin: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+            font-size: 10pt;
+            color: #1a1a2e;
+            background: #fff;
+            width: 210mm;
+            min-height: 297mm;
+            padding: 20mm 18mm;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        /* ===== HEADER ===== */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 30px;
+            padding-bottom: 18px;
+            border-bottom: 3px solid #2c3e8f;
+        }
+
+        .vendor-info h1 {
+            font-size: 20pt;
+            font-weight: 700;
+            color: #2c3e8f;
+            margin-bottom: 6px;
+            letter-spacing: 0.5px;
+        }
+
+        .vendor-info .vendor-details {
+            font-size: 9pt;
+            color: #555;
+            line-height: 1.6;
+            white-space: pre-line;
+        }
+
+        .vendor-info .vendor-tax {
+            font-size: 8.5pt;
+            color: #777;
+            margin-top: 4px;
+        }
+
+        .invoice-title {
+            text-align: right;
+        }
+
+        .invoice-title h2 {
+            font-size: 28pt;
+            font-weight: 800;
+            color: #2c3e8f;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+        }
+
+        /* ===== INVOICE META ===== */
+        .meta-section {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 28px;
+        }
+
+        .meta-block {
+            flex: 1;
+        }
+
+        .meta-block.right {
+            text-align: right;
+        }
+
+        .meta-block h3 {
+            font-size: 7.5pt;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #2c3e8f;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .meta-block p {
+            font-size: 9.5pt;
+            color: #333;
+            line-height: 1.6;
+            white-space: pre-line;
+        }
+
+        .meta-grid {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 3px 14px;
+            font-size: 9.5pt;
+        }
+
+        .meta-grid .label {
+            color: #777;
+            font-weight: 500;
+        }
+
+        .meta-grid .value {
+            color: #1a1a2e;
+            font-weight: 600;
+        }
+
+        /* ===== TABLE ===== */
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 24px;
+        }
+
+        .items-table thead th {
+            background: #2c3e8f;
+            color: #fff;
+            font-size: 8pt;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+            padding: 10px 12px;
+            text-align: left;
+        }
+
+        .items-table thead th:nth-child(n+3) {
+            text-align: right;
+        }
+
+        .items-table tbody td {
+            padding: 10px 12px;
+            font-size: 9.5pt;
+            border-bottom: 1px solid #e8e8f0;
+            color: #333;
+        }
+
+        .items-table tbody td:nth-child(n+3) {
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .items-table tbody tr:nth-child(even) {
+            background: #f7f8fc;
+        }
+
+        .items-table tbody tr:last-child td {
+            border-bottom: 2px solid #2c3e8f;
+        }
+
+        .items-table .row-num {
+            color: #999;
+            width: 30px;
+        }
+
+        /* ===== TOTALS ===== */
+        .totals-section {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 30px;
+        }
+
+        .totals-table {
+            width: 280px;
+            border-collapse: collapse;
+        }
+
+        .totals-table tr td {
+            padding: 6px 12px;
+            font-size: 9.5pt;
+        }
+
+        .totals-table tr td:first-child {
+            color: #555;
+            font-weight: 500;
+        }
+
+        .totals-table tr td:last-child {
+            text-align: right;
+            font-weight: 600;
+            color: #1a1a2e;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .totals-table tr.total-row {
+            border-top: 2px solid #2c3e8f;
+        }
+
+        .totals-table tr.total-row td {
+            padding-top: 10px;
+            font-size: 12pt;
+            font-weight: 800;
+            color: #2c3e8f;
+        }
+
+        .totals-table tr.amount-due td {
+            padding-top: 6px;
+            font-size: 10pt;
+            font-weight: 700;
+            color: #1a1a2e;
+        }
+
+        /* ===== PAYMENT INFO ===== */
+        .payment-section {
+            background: #f7f8fc;
+            border: 1px solid #e0e2f0;
+            border-radius: 6px;
+            padding: 16px 20px;
+            margin-bottom: 24px;
+        }
+
+        .payment-section h3 {
+            font-size: 8pt;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #2c3e8f;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .payment-section p {
+            font-size: 9pt;
+            color: #444;
+            line-height: 1.6;
+        }
+
+        /* ===== FOOTER ===== */
+        .footer {
+            position: fixed;
+            bottom: 18mm;
+            left: 18mm;
+            right: 18mm;
+            text-align: center;
+            font-size: 7.5pt;
+            color: #aaa;
+            border-top: 1px solid #e0e0e0;
+            padding-top: 10px;
+        }
+
+        /* ===== UTILITIES ===== */
+        .text-right {
+            text-align: right;
+        }
+
+        .text-muted {
+            color: #999;
+        }
+
+        .nowrap {
+            white-space: nowrap;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- HEADER -->
+    <div class="header">
+        <div class="vendor-info">
+            <h1>{{ VendorName or 'Company Name' }}</h1>
+            {% if VendorAddress %}
+            <div class="vendor-details">{{ VendorAddress }}</div>
+            {% endif %}
+            {% if VendorTaxId %}
+            <div class="vendor-tax">Tax ID: {{ VendorTaxId }}</div>
+            {% endif %}
+        </div>
+        <div class="invoice-title">
+            <h2>Invoice</h2>
+        </div>
+    </div>
+
+    <!-- META SECTION: Bill To + Invoice Details -->
+    <div class="meta-section">
+        <!-- Bill To -->
+        <div class="meta-block">
+            <h3>Bill To</h3>
+            <p>
+                <strong>{{ CustomerName or 'N/A' }}</strong>
+                {% if CustomerId %}
+                <br><span class="text-muted">ID: {{ CustomerId }}</span>
+                {% endif %}
+                {% if CustomerAddress %}
+                <br>{{ CustomerAddress }}
+                {% endif %}
+                {% if CustomerTaxId %}
+                <br><span class="text-muted">Tax ID: {{ CustomerTaxId }}</span>
+                {% endif %}
+            </p>
+        </div>
+
+        <!-- Invoice Details -->
+        <div class="meta-block right">
+            <h3>Invoice Details</h3>
+            <div class="meta-grid" style="justify-items: end;">
+                <span class="label">Invoice #</span>
+                <span class="value">{{ InvoiceId or 'N/A' }}</span>
+
+                <span class="label">Date</span>
+                <span class="value">{{ InvoiceDate or 'N/A' }}</span>
+
+                {% if DueDate %}
+                <span class="label">Due Date</span>
+                <span class="value">{{ DueDate }}</span>
+                {% endif %}
+
+                {% if PONumber %}
+                <span class="label">PO Number</span>
+                <span class="value">{{ PONumber }}</span>
+                {% endif %}
+
+                {% if CountryRegion %}
+                <span class="label">Country</span>
+                <span class="value">{{ CountryRegion }}</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- LINE ITEMS TABLE -->
+    <table class="items-table">
+        <thead>
+            <tr>
+                <th class="row-num">#</th>
+                <th>Description</th>
+                <th>Qty</th>
+                <th>Unit Price</th>
+                <th>Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if LineItems %}
+            {% for item in LineItems %}
+            <tr>
+                <td class="row-num">{{ loop.index }}</td>
+                <td>
+                    {{ item.Description or 'N/A' }}
+                    {% if item.ProductCode %}
+                    <br><span class="text-muted" style="font-size: 8pt;">Code: {{ item.ProductCode }}</span>
+                    {% endif %}
+                    {% if item.Date %}
+                    <br><span class="text-muted" style="font-size: 8pt;">Date: {{ item.Date }}</span>
+                    {% endif %}
+                </td>
+                <td class="text-right nowrap">
+                    {{ item.Quantity if item.Quantity is not none else '-' }}
+                    {% if item.QuantityUnit %} {{ item.QuantityUnit }}{% endif %}
+                </td>
+                <td class="text-right nowrap">
+                    {% if item.UnitPrice and item.UnitPrice.Amount is not none %}
+                    {{ "%.2f"|format(item.UnitPrice.Amount) }}
+                    {% else %}
+                    -
+                    {% endif %}
+                </td>
+                <td class="text-right nowrap">
+                    {% if item.TotalAmount and item.TotalAmount.Amount is not none %}
+                    {{ "%.2f"|format(item.TotalAmount.Amount) }}
+                    {% else %}
+                    -
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+            {% else %}
+            <tr>
+                <td colspan="5" style="text-align: center; padding: 20px; color: #999;">No line items</td>
+            </tr>
+            {% endif %}
+        </tbody>
+    </table>
+
+    <!-- TOTALS -->
+    <div class="totals-section">
+        <table class="totals-table">
+            {% if SubtotalAmount and SubtotalAmount.Amount is not none %}
+            <tr>
+                <td>Subtotal</td>
+                <td>{{ currency }} {{ "%.2f"|format(SubtotalAmount.Amount) }}</td>
+            </tr>
+            {% endif %}
+
+            {% if TotalDiscountAmount and TotalDiscountAmount.Amount is not none %}
+            <tr>
+                <td>Discount</td>
+                <td>- {{ currency }} {{ "%.2f"|format(TotalDiscountAmount.Amount) }}</td>
+            </tr>
+            {% endif %}
+
+            {% if TotalTaxAmount and TotalTaxAmount.Amount is not none %}
+            <tr>
+                <td>Tax</td>
+                <td>{{ currency }} {{ "%.2f"|format(TotalTaxAmount.Amount) }}</td>
+            </tr>
+            {% endif %}
+
+            {% if TotalAmount and TotalAmount.Amount is not none %}
+            <tr class="total-row">
+                <td>Total</td>
+                <td>{{ currency }} {{ "%.2f"|format(TotalAmount.Amount) }}</td>
+            </tr>
+            {% endif %}
+
+            {% if AmountDue and AmountDue.Amount is not none %}
+            <tr class="amount-due">
+                <td>Amount Due</td>
+                <td>{{ currency }} {{ "%.2f"|format(AmountDue.Amount) }}</td>
+            </tr>
+            {% endif %}
+
+            {% if BalanceForward and BalanceForward.Amount is not none %}
+            <tr>
+                <td>Balance Forward</td>
+                <td>{{ currency }} {{ "%.2f"|format(BalanceForward.Amount) }}</td>
+            </tr>
+            {% endif %}
+        </table>
+    </div>
+
+    <!-- PAYMENT / NOTES -->
+    {% if PaymentTerm or RemittanceAddress %}
+    <div class="payment-section">
+        <h3>Payment Information</h3>
+        {% if PaymentTerm %}
+        <p><strong>Terms:</strong> {{ PaymentTerm }}</p>
+        {% endif %}
+        {% if RemittanceAddress %}
+        <p style="margin-top: 4px;"><strong>Remit To:</strong> {{ RemittanceAddressRecipient or '' }}<br>{{
+            RemittanceAddress }}</p>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- FOOTER -->
+    <div class="footer">
+        This invoice was generated automatically.
+        {% if VendorName %} &bull; {{ VendorName }}{% endif %}
+        {% if InvoiceId %} &bull; Invoice #{{ InvoiceId }}{% endif %}
+    </div>
+
+</body>
+
+</html>
