@@ -120,6 +120,101 @@ curl -X POST http://localhost:8000/generate-pdf \
   --output invoice_output.pdf
 ```
 
+## Deployment to Azure Web App (Docker)
+
+#### 1. Create a Web App Plan
+- Uses Linux with B1 tier (minimum recommended).
+```cmd
+az appservice plan create --name invoice-gen-plan --resource-group <resource-group> --sku B1 --is-linux
+```
+
+#### 2. Create Azure Web App Resource
+- The `<web-app-name>` must be **lowercase** and **no spaces** — it becomes your URL: `https://<web-app-name>.azurewebsites.net`
+```cmd
+az webapp create --resource-group <resource-group> --plan invoice-gen-plan --name <web-app-name> --runtime "PYTHON|3.11"
+```
+
+#### 3. Build & Push Docker Image
+- Make sure Docker Desktop is open.
+- Run from the `app/` folder (where the Dockerfile is).
+```cmd
+cd app
+docker build -t <dockerhub-username>/invoice-generator:latest .
+docker login
+docker push <dockerhub-username>/invoice-generator:latest
+```
+
+#### 4. Configure Azure Web App for Containers
+```cmd
+az webapp config container set ^
+  -g <resource-group> -n <web-app-name> ^
+  --container-image-name <dockerhub-username>/invoice-generator:latest ^
+  --container-registry-url https://index.docker.io
+```
+
+#### 5. Set App Settings
+```cmd
+az webapp config appsettings set -g <resource-group> -n <web-app-name> --settings ^
+  WEBSITES_PORT=8000 ^
+  AZURE_AI_ENDPOINT="https://<your-resource>.cognitiveservices.azure.com/" ^
+  AZURE_AI_KEY="<your-azure-ai-key>" ^
+  ANALYZER_ID="invoice_extractor_analyzer_1"
+```
+
+#### 6. Restart & Verify
+```cmd
+az webapp restart -g <resource-group> -n <web-app-name>
+az webapp log tail -g <resource-group> -n <web-app-name>
+```
+
+#### 7. Test Endpoints
+- Use Postman or cURL to test. All requests require the `X-API-Key` header.
+- Health:
+```
+GET https://<web-app-name>.azurewebsites.net/health
+```
+- Analyze Invoice:
+```
+POST https://<web-app-name>.azurewebsites.net/analyze-invoice
+```
+- Generate PDF:
+```
+POST https://<web-app-name>.azurewebsites.net/generate-pdf
+```
+
+---
+
+## Steps for Updating the App
+
+#### 1. Make your code changes locally
+
+#### 2. Rebuild the Docker Image
+```cmd
+cd app
+docker build -t <dockerhub-username>/invoice-generator:latest .
+```
+
+#### 3. Push the new image to Docker Hub
+- Make sure Docker Desktop is open.
+```cmd
+docker push <dockerhub-username>/invoice-generator:latest
+```
+
+#### 4. Update Azure Web App to use the new image
+```cmd
+az webapp config container set ^
+  -g <resource-group> -n <web-app-name> ^
+  --container-image-name <dockerhub-username>/invoice-generator:latest ^
+  --container-registry-url https://index.docker.io
+```
+
+#### 5. Restart the Web App
+```cmd
+az webapp restart -g <resource-group> -n <web-app-name>
+```
+
+---
+
 ## Tech Stack
 
 | Component          | Technology                        |
